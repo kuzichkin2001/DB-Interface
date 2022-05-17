@@ -1,3 +1,5 @@
+# something went wrong
+
 import psycopg2
 
 from flask import Response, request
