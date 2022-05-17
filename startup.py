@@ -5,6 +5,8 @@ from configuration import CONNECTION_PARAMS
 from services.kitchen_service import KitchenService
 from services.officiant_service import OfficiantService
 from services.discount_service import DiscountService
+from services.client_service import ClientService
+from services.dish_list_service import DishListService
 
 
 app = Flask(__name__)
@@ -72,5 +74,33 @@ def discounts():
         return service.create_discount()
     elif request.method == 'DELETE':
         return service.delete_discount()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/clients', methods=['GET', 'POST', 'DELETE'])
+def clients():
+    service = ClientService()
+
+    if request.method == 'GET':
+        return service.get_all_clients()
+    elif request.method == 'POST':
+        return service.create_client()
+    elif request.method == 'DELETE':
+        return service.delete_client()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/dish_lists', methods=['GET', 'POST', 'DELETE'])
+def dish_lists():
+    service = DishListService()
+
+    if request.method == 'GET':
+        return service.get_dish_lists()
+    elif request.method == 'POST':
+        return service.create_dish_list()
+    elif request.method == 'DELETE':
+        return service.delete_dish_list()
     else:
         return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')

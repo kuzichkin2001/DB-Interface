@@ -41,7 +41,7 @@ CREATE TABLE product (
 
 CREATE TABLE client (
     client_id SERIAL UNIQUE,
-    name VARCHAR(25) NOT NULL,
+    name VARCHAR(40) NOT NULL,
     birthdate DATE,
     phone_number VARCHAR(15),
     discount_id INT NOT NULL,
