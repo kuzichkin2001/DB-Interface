@@ -3,10 +3,14 @@ import psycopg2
 from flask import Flask, Response, request
 from configuration import CONNECTION_PARAMS
 from services.kitchen_service import KitchenService
+from services.offer_service import OfferService
 from services.officiant_service import OfficiantService
 from services.discount_service import DiscountService
 from services.client_service import ClientService
 from services.dish_list_service import DishListService
+from services.product_list_service import ProductListService
+from services.product_service import ProductService
+from services.dish_service import DishService
 
 
 app = Flask(__name__)
@@ -102,5 +106,61 @@ def dish_lists():
         return service.create_dish_list()
     elif request.method == 'DELETE':
         return service.delete_dish_list()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/dishes', methods=['GET', 'POST', 'DELETE'])
+def dishes():
+    service = DishService()
+
+    if request.method == 'GET':
+        return service.get_all_dishes()
+    elif request.method == 'POST':
+        return service.create_dish()
+    elif request.method == 'DELETE':
+        return service.delete_dish()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/offers', methods=['GET', 'POST', 'DELETE'])
+def offers():
+    service = OfferService()
+
+    if request.method == 'GET':
+        return service.get_all_offers()
+    elif request.method == 'POST':
+        return service.create_offer()
+    elif request.method == 'DELETE':
+        return service.delete_offer()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/product_lists', methods=['GET', 'POST', 'DELETE'])
+def product_lists():
+    service = ProductListService()
+
+    if request.method == 'GET':
+        return service.get_product_lists()
+    elif request.method == 'POST':
+        return service.create_product_list()
+    elif request.method == 'DELETE':
+        return service.delete_product_list()
+    else:
+        return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')
+
+
+@app.route('/api/products', methods=['GET', 'POST', 'DELETE'])
+def products():
+    service = ProductService()
+
+    if request.method == 'GET':
+        return service.get_all_products()
+    elif request.method == 'POST':
+        return service.create_product()
+    elif request.method == 'DELETE':
+        return service.delete_product()
     else:
         return Response({ 'ok': False, 'status': 404 }, status=404, mimetype='application/json')

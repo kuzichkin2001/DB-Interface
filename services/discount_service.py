@@ -59,6 +59,7 @@ class DiscountService():
             try:
                 cur = conn.cursor()
                 cur.execute(f'DELETE FROM kitchen WHERE discount_id = {json["id"]}')
+                cur.execute(f'DELETE FROM discount WHERE discount_id = {json["id"]}')
 
                 response = {
                     'ok': True,
