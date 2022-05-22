@@ -1,7 +1,17 @@
 import psycopg2
+import functools
 
-from flask import Flask, Response, request
+from flask import Flask
+from flask import Response
+from flask import redirect
+from flask import request
+from flask import render_template
+from flask import globals
+from flask import url_for
+from flask import session
+
 from configuration import CONNECTION_PARAMS
+
 from services.kitchen_service import KitchenService
 from services.offer_service import OfferService
 from services.officiant_service import OfficiantService
@@ -12,8 +22,14 @@ from services.product_list_service import ProductListService
 from services.product_service import ProductService
 from services.dish_service import DishService
 
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
+
 
 app = Flask(__name__)
+app.config.from_mapping(
+    SECRET_KEY='development',
+)
 
 def connect():
     try:
@@ -36,12 +52,123 @@ def connect():
 connect()
 
 
+def login_required(view):
+    """Декоратор, который перенаправляет на страницу логина, если пользователь неопределен"""
+
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if globals.user is None:
+            return redirect(url_for('login'))
+        
+        return view(**kwargs)
+    
+    return wrapped_view
+
+
+@app.before_first_request
+def load_user_before_first_request():
+    try:
+        user_id = session['user_id']
+
+        with psycopg2.connect(**CONNECTION_PARAMS) as conn:
+            cur = conn.cursor()
+
+            globals.user = cur.execute(f"SELECT * FROM users WHERE user_id = {user_id}")
+
+    except (Exception) as error:
+        print(error)
+
+        globals.user = None
+
+        return redirect(url_for('error', error_text=error))
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    with psycopg2.connect(**CONNECTION_PARAMS) as conn:
+        if request.method == 'POST':
+            try:
+                json = request.form
+
+                username = json['username']
+                password = json['password']
+                password_confirmation = json['password_confirmation']
+
+                if password == password_confirmation:
+                    cur = conn.cursor()
+
+                    query = f"""INSERT INTO users(username, password, role) VALUES
+                                                (\'{username}\', \'{generate_password_hash(password, method='plain', salt_length=8)}\', 'user');"""
+                    
+                    cur.execute(query)
+
+                    return redirect(url_for('login'))
+                else:
+                    return redirect(url_for('error', error_text='Пароли не совпадают.'))
+            
+            except (Exception) as error:
+                print(error)
+
+                return redirect(url_for('error', error_text=error))
+        
+        return render_template('auth/register.html')
+
+
+@app.route('/login', methods=['GET', 'POST',])
+def login():
+    with psycopg2.connect(**CONNECTION_PARAMS) as conn:
+        if request.method == 'POST':
+            try:
+                json = request.form
+
+                username = json['username']
+                password = json['password']
+
+                cur = conn.cursor()
+
+                cur.execute(f"SELECT * FROM users WHERE username = \'{username}\'")
+
+                user = cur.fetchone()
+
+                id, login, passw, role = user
+
+                if not check_password_hash(passw, password):
+                    raise Exception('Password is not matching')
+                
+                session.clear()
+                session['user_id'] = id
+
+                globals.user = 
+
+                return redirect(url_for('index'))
+                
+            except (Exception) as error:
+                print(f' * {error}')
+
+                return redirect(url_for('error', error_text=error))
+        
+        return render_template('auth/login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+
+    return redirect(url_for('index'))
+
+
 @app.route('/')
 def index():
-    return 'Hello, World!'
+    return render_template('base.html', g=globals, session=session)
+
+
+@app.route('/error/<error_text>')
+def error(error_text):
+    return render_template('error.html', error_text=error_text)
 
 
 @app.route('/api/kitchens', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def kitchens():
     service = KitchenService()
     if request.method == 'GET':
@@ -55,6 +182,7 @@ def kitchens():
 
 
 @app.route('/api/officiants', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def officiants():
     service = OfficiantService()
 
@@ -69,6 +197,7 @@ def officiants():
 
 
 @app.route('/api/discounts', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def discounts():
     service = DiscountService()
 
@@ -83,6 +212,7 @@ def discounts():
 
 
 @app.route('/api/clients', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def clients():
     service = ClientService()
 
@@ -97,6 +227,7 @@ def clients():
 
 
 @app.route('/api/dish_lists', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def dish_lists():
     service = DishListService()
 
@@ -111,6 +242,7 @@ def dish_lists():
 
 
 @app.route('/api/dishes', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def dishes():
     service = DishService()
 
@@ -125,6 +257,7 @@ def dishes():
 
 
 @app.route('/api/offers', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def offers():
     service = OfferService()
 
@@ -139,6 +272,7 @@ def offers():
 
 
 @app.route('/api/product_lists', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def product_lists():
     service = ProductListService()
 
@@ -153,6 +287,7 @@ def product_lists():
 
 
 @app.route('/api/products', methods=['GET', 'POST', 'DELETE'])
+@login_required
 def products():
     service = ProductService()
 

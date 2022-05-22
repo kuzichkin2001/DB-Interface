@@ -1,5 +1,6 @@
 CREATE DATABASE restaurant;
 
+DROP TABLE users;
 DROP TABLE product_list;
 DROP TABLE dish_list;
 DROP TABLE offer;
@@ -9,6 +10,13 @@ DROP TABLE kitchen;
 DROP TABLE officiant;
 DROP TABLE discount;
 DROP TABLE product;
+
+CREATE TABLE users (
+    user_id SERIAL UNIQUE,
+    username VARCHAR(32) NOT NULL,
+    password VARCHAR(80) NOT NULL,
+    role VARCHAR(10) NOT NULL
+);
 
 CREATE TABLE kitchen (
     kitchen_id SERIAL UNIQUE,
